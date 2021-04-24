@@ -39,9 +39,9 @@ static void string_replace_all_occurrences_with_char(char *s, const char *occur,
 	}
 }
 
-static int is_valid_index(struct json_object *jo, const char *path, int32_t *idx)
+static int is_valid_index(struct json_object *jo, const char *path, size_t *idx)
 {
-	int i, len = strlen(path);
+	size_t i, len = strlen(path);
 	/* this code-path optimizes a bit, for when we reference the 0-9 index range
 	 * in a JSON array and because leading zeros not allowed
 	 */
@@ -71,12 +71,7 @@ static int is_valid_index(struct json_object *jo, const char *path, int32_t *idx
 		}
 	}
 
-	*idx = strtol(path, NULL, 10);
-	if (*idx < 0)
-	{
-		errno = EINVAL;
-		return 0;
-	}
+	*idx = strtoull(path, NULL, 10);
 check_oob:
 	len = json_object_array_length(jo);
 	if (*idx >= len)
@@ -93,7 +88,7 @@ static int json_pointer_get_single_path(struct json_object *obj, char *path,
 {
 	if (json_object_is_type(obj, json_type_array))
 	{
-		int32_t idx;
+		size_t idx;
 		if (!is_valid_index(obj, path, &idx))
 			return -1;
 		obj = json_object_array_get_idx(obj, idx);
@@ -126,7 +121,7 @@ static int json_pointer_set_single_path(struct json_object *parent, const char *
 {
 	if (json_object_is_type(parent, json_type_array))
 	{
-		int32_t idx;
+		size_t idx;
 		/* RFC (Chapter 4) states that '-' may be used to add new elements to an array */
 		if (path[0] == '-' && path[1] == '\0')
 			return json_object_array_add(parent, value);
